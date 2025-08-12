@@ -4,7 +4,7 @@ from flask import Flask
 from flask_smorest import Api
 
 from db import db
-from resources import item, store
+from resources import item, store, tag
 
 
 def create_app(db_uri=None):
@@ -33,5 +33,6 @@ def create_app(db_uri=None):
 
     api.register_blueprint(store.bp)
     api.register_blueprint(item.bp)
+    api.register_blueprint(tag.bp)
 
     return app
