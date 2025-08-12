@@ -92,11 +92,10 @@ class Tag(MethodView):
         description="Returned if a tag is associated with items. In this case, the tag cannot be deleted.",
     )
     def delete(self, tag_id):
-        tag = TagModel.query.get(tag_id)
-        if not tag:
-            abort(404, message="Tag not found")
-        if tag.items.first() is not None:
-            abort(400, message="Tag is associated with items and cannot be deleted.")
-        db.session.delete(tag)
-        db.session.commit()
-        return {"message": "Tag deleted"}
+        tag = TagModel.query.get_or_404(tag_id)
+
+        if not tag.items:
+            db.session.delete(tag)
+            db.session.commit()
+            return {"message": "Tag deleted"}
+        abort(400, message="Tag is associated with items and cannot be deleted.")
