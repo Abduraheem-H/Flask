@@ -1,8 +1,7 @@
 from flask_smorest import abort, Blueprint
-from flask import request
+from flask_jwt_extended import jwt_required
 from flask.views import MethodView
 from sqlalchemy.exc import SQLAlchemyError
-import uuid
 
 
 from db import db
@@ -15,6 +14,7 @@ bp = Blueprint("items", __name__, description="Operations on items")
 @bp.route("/item")
 class ItemView(MethodView):
 
+    @jwt_required()
     @bp.response(200, ItemSchema(many=True))
     def get(self):
         try:
@@ -23,6 +23,7 @@ class ItemView(MethodView):
         except SQLAlchemyError:
             abort(500, message="Error occurred while fetching items")
 
+    @jwt_required()
     @bp.arguments(ItemSchema)
     @bp.response(201, ItemSchema)
     def post(self, item_data):
@@ -39,6 +40,7 @@ class ItemView(MethodView):
 @bp.route("/item/<string:item_id>")
 class ItemDetailView(MethodView):
 
+    @jwt_required()
     @bp.response(200, ItemSchema)
     def get(self, item_id):
         try:
@@ -49,6 +51,7 @@ class ItemDetailView(MethodView):
         except SQLAlchemyError:
             abort(500, message="Error occurred while fetching item")
 
+    @jwt_required()
     def delete(self, item_id):
         try:
             item = ItemModel.query.get(item_id)
@@ -60,6 +63,7 @@ class ItemDetailView(MethodView):
         except SQLAlchemyError:
             abort(500, message="Error occurred while deleting item")
 
+    @jwt_required()
     @bp.arguments(ItemUpdateSchema)
     @bp.response(200, ItemSchema)
     def put(self, updated_item_data, item_id):
