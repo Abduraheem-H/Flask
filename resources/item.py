@@ -1,8 +1,7 @@
 from flask_smorest import abort, Blueprint
-from flask_jwt_extended import jwt_required, get_jwt
+from flask_jwt_extended import jwt_required
 from flask.views import MethodView
 from sqlalchemy.exc import SQLAlchemyError
-from flask import current_app
 
 
 from db import db
@@ -18,10 +17,6 @@ class ItemView(MethodView):
     @bp.response(200, ItemSchema(many=True))
     @jwt_required()
     def get(self):
-        print(
-            "DEBUG protected JWT_SECRET_KEY:", current_app.config.get("JWT_SECRET_KEY")
-        )
-        print("DEBUG token payload:", get_jwt())
         try:
             items = ItemModel.query.all()
             return items
@@ -45,7 +40,7 @@ class ItemView(MethodView):
 @bp.route("/item/<string:item_id>")
 class ItemDetailView(MethodView):
 
-    @jwt_required()
+    @jwt_required(fresh=True)
     @bp.response(200, ItemSchema)
     def get(self, item_id):
         try:
@@ -56,7 +51,7 @@ class ItemDetailView(MethodView):
         except SQLAlchemyError:
             abort(500, message="Error occurred while fetching item")
 
-    @jwt_required()
+    @jwt_required(fresh=True)
     def delete(self, item_id):
         try:
             item = ItemModel.query.get(item_id)
@@ -68,7 +63,7 @@ class ItemDetailView(MethodView):
         except SQLAlchemyError:
             abort(500, message="Error occurred while deleting item")
 
-    @jwt_required()
+    @jwt_required(fresh=True)
     @bp.arguments(ItemUpdateSchema)
     @bp.response(200, ItemSchema)
     def put(self, updated_item_data, item_id):

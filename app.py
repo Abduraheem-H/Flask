@@ -1,9 +1,10 @@
 import os
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_smorest import Api
 from flask_jwt_extended import JWTManager
 
+from blocklist import is_token_revoked
 from db import db
 from resources import item, store, tag, user
 
@@ -31,24 +32,31 @@ def create_app(db_uri=None):
     app.config["JWT_SECRET_KEY"] = "super-secret"
     jwt = JWTManager(app)
 
+    @jwt.needs_fresh_token_loader
+    def needs_fresh_token_callback(jwt_header, jwt_payload):
+        return (
+            jsonify(
+                {
+                    "description": "The access token is not fresh",
+                    "error": "Fresh token required",
+                }
+            ),
+            401,
+        )
+
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
         return jsonify({"message": "The token has expired", "error": "token_expired"})
 
     @jwt.invalid_token_loader
     def invalid_token_callback(error):
-        # DEBUG: print the incoming Authorization header so we can see exactly what client sent
-        print(
-            "DEBUG invalid_token_loader called. Authorization header:",
-            request.headers.get("Authorization"),
-        )
-        # Return 401 so client sees a proper unauthorized status
         return (
             jsonify(
                 {"message": "Signature verification failed", "error": "invalid_token"}
             ),
             401,
         )
+
     @jwt.unauthorized_loader
     def unauthorized_callback(error):
         return (
@@ -57,6 +65,20 @@ def create_app(db_uri=None):
                     "description": "Request does not contain an access token",
                     "error": "Authorization required",
                 }
+            ),
+            401,
+        )
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_in_blocklist(jwt_header, jwt_payload):
+        jti = jwt_payload["jti"]
+        return is_token_revoked(jti)
+
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        return (
+            jsonify(
+                {"message": "The token has been revoked", "error": "token_revoked"}
             ),
             401,
         )
