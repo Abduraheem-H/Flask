@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_smorest import Api
 from flask_jwt_extended import JWTManager
 
@@ -37,10 +37,18 @@ def create_app(db_uri=None):
 
     @jwt.invalid_token_loader
     def invalid_token_callback(error):
-        return jsonify(
-            {"message": "Signature verification failed", "error": "invalid_token"}
+        # DEBUG: print the incoming Authorization header so we can see exactly what client sent
+        print(
+            "DEBUG invalid_token_loader called. Authorization header:",
+            request.headers.get("Authorization"),
         )
-
+        # Return 401 so client sees a proper unauthorized status
+        return (
+            jsonify(
+                {"message": "Signature verification failed", "error": "invalid_token"}
+            ),
+            401,
+        )
     @jwt.unauthorized_loader
     def unauthorized_callback(error):
         return (

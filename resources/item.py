@@ -1,7 +1,8 @@
 from flask_smorest import abort, Blueprint
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt
 from flask.views import MethodView
 from sqlalchemy.exc import SQLAlchemyError
+from flask import current_app
 
 
 from db import db
@@ -14,9 +15,13 @@ bp = Blueprint("items", __name__, description="Operations on items")
 @bp.route("/item")
 class ItemView(MethodView):
 
-    @jwt_required()
     @bp.response(200, ItemSchema(many=True))
+    @jwt_required()
     def get(self):
+        print(
+            "DEBUG protected JWT_SECRET_KEY:", current_app.config.get("JWT_SECRET_KEY")
+        )
+        print("DEBUG token payload:", get_jwt())
         try:
             items = ItemModel.query.all()
             return items
