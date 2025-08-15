@@ -6,3 +6,4 @@ sqlalchemy
 flask_jwt_extended
 passlib
 redis
+flask_migrate
